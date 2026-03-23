@@ -1,29 +1,22 @@
-import { supabase } from '@/lib/supabase';
+import { CreatePreferencePayload, CreatePreferenceResponse } from '../types';
 
-interface CreatePreferenceParams {
-  listingId: string;
-}
-
-interface CreatePreferenceResponse {
-  init_point?: string;
-  sandbox_init_point?: string;
-}
-
-export const createPreference = async ({
-  listingId,
-}: CreatePreferenceParams): Promise<CreatePreferenceResponse> => {
-  const { data, error } = await supabase.functions.invoke(
-    'mp-create-preference',
+export const createPreference = async (
+  payload: CreatePreferencePayload
+): Promise<CreatePreferenceResponse> => {
+  const res = await fetch(
+    'https://YOUR_BACKEND_URL/mp-create-preference',
     {
-      body: {
-        listingId,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(payload),
     }
   );
 
-  if (error) {
-    throw error;
+  if (!res.ok) {
+    throw new Error('Error creando preferencia de pago');
   }
 
-  return data as CreatePreferenceResponse;
+  return res.json();
 };

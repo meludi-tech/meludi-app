@@ -1,28 +1,50 @@
+import { useChat } from '@/features/chat/hooks/useChat';
 import { router } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  ActivityIndicator,
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function InboxScreen() {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 10 }}>Inbox</Text>
-        <Text style={{ color: '#6B7280', textAlign: 'center', marginBottom: 18 }}>
-          Para ver mensajes necesitas crear cuenta o iniciar sesión.
-        </Text>
+  const { threads, loading } = useChat();
 
-        <Pressable
-          onPress={() => router.push('/(auth)/signup')}
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (!threads.length) {
+    return (
+      <View style={{ flex: 1, padding: 20 }}>
+        <Text>No tienes mensajes aún</Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={threads}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          onPress={() => router.push(`/chat/${item.id}`)}
           style={{
-            backgroundColor: '#1F3A44',
-            paddingHorizontal: 20,
-            paddingVertical: 14,
-            borderRadius: 14,
+            padding: 16,
+            borderBottomWidth: 1,
+            borderColor: '#eee',
           }}
         >
-          <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>Crear cuenta</Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
+          <Text style={{ fontWeight: '600' }}>
+            Conversación
+          </Text>
+        </TouchableOpacity>
+      )}
+    />
   );
 }

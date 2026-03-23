@@ -1,71 +1,88 @@
-import { Listing } from '@/features/listings/types';
+import { useFavorites } from '@/features/favorites/hooks/useFavorites';
 import { ProtectedAction } from '@/navigation/ProtectedAction';
-import { Image, Pressable, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 
-export const ListingCard = ({
-  listing,
-  onPress,
-}: {
-  listing: Listing;
-  onPress: () => void;
-}) => {
-  const image = listing.photos?.[0]?.url;
+type Props = {
+  listing: any;
+};
+
+export const ListingCard = ({ listing }: Props) => {
+  const { handleToggleFavorite } = useFavorites();
 
   return (
-    <Pressable
-      onPress={onPress}
+    <TouchableOpacity
       style={{
         flex: 1,
-        marginBottom: 16,
+        margin: 6,
       }}
+      onPress={() => router.push(`/product/${listing.id}`)}
     >
-      <View
-        style={{
-          borderRadius: 16,
-          backgroundColor: '#f5f5f5',
-          overflow: 'hidden',
-        }}
-      >
-        {image && (
-          <Image
-            source={{ uri: image }}
-            style={{ width: '100%', height: 160 }}
-            resizeMode="cover"
-          />
-        )}
+      <View>
+        <Image
+          source={{ uri: listing.cover_photo_url }}
+          style={{
+            width: '100%',
+            height: 180,
+            borderRadius: 12,
+          }}
+        />
 
-        {/* ❤️ Like */}
-        <ProtectedAction onPress={() => {}}>
-          <View
-            style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              backgroundColor: '#fff',
-              borderRadius: 20,
-              padding: 6,
-            }}
-          >
-            <Text>♡</Text>
-          </View>
+        {/* ❤️ FAVORITO */}
+        <ProtectedAction onPress={() => handleToggleFavorite(listing.id)}>
+          {(handlePress) => (
+            <TouchableOpacity
+              onPress={handlePress}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                backgroundColor: '#fff',
+                borderRadius: 20,
+                padding: 6,
+              }}
+            >
+              <Text style={{ fontSize: 16 }}>♡</Text>
+            </TouchableOpacity>
+          )}
         </ProtectedAction>
       </View>
 
-      <Text style={{ marginTop: 8, fontWeight: '500' }}>
+      {/* INFO */}
+      <Text numberOfLines={1} style={{ marginTop: 6, fontWeight: '500' }}>
         {listing.title}
       </Text>
 
+      {/* BADGES */}
+      <View style={{ flexDirection: 'row', marginTop: 4, gap: 4 }}>
+        {listing.brand && (
+          <Text style={{ fontSize: 12, backgroundColor: '#eee', padding: 4, borderRadius: 6 }}>
+            {listing.brand}
+          </Text>
+        )}
+
+        {listing.size && (
+          <Text style={{ fontSize: 12, backgroundColor: '#eee', padding: 4, borderRadius: 6 }}>
+            {listing.size}
+          </Text>
+        )}
+
+        {listing.condition && (
+          <Text style={{ fontSize: 12, backgroundColor: '#eee', padding: 4, borderRadius: 6 }}>
+            {listing.condition}
+          </Text>
+        )}
+      </View>
+
+      {/* PRECIO */}
+      <Text style={{ marginTop: 4, fontWeight: '600' }}>
+        ${listing.price_clp?.toLocaleString()}
+      </Text>
+
+      {/* PROTECCIÓN */}
       <Text style={{ fontSize: 12, color: '#666' }}>
-        {listing.brand} · {listing.size} · {listing.condition}
+        Pago protegido
       </Text>
-
-      <Text style={{ fontSize: 16, fontWeight: '700', marginTop: 4 }}>
-        ${listing.price_clp.toLocaleString('es-CL')}
-      </Text>
-
-      <Text style={{ fontSize: 12, color: '#888' }}>
-        + Pago protegido
-      </Text>
-    </Pressable>
+    </TouchableOpacity>
   );
 };

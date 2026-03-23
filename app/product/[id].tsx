@@ -1,208 +1,163 @@
-import * as Linking from 'expo-linking';
+import { supabase } from '@/lib/supabase';
+import { ProtectedAction } from '@/navigation/ProtectedAction';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-import { ProductGallery } from '@/components/listings/ProductGallery';
-import { createPreference } from '@/features/checkout/api/createPreference';
-import { getListingById } from '@/features/listings/api/getListingById';
-import { Listing } from '@/features/listings/types';
-import { ProtectedAction } from '@/navigation/ProtectedAction';
-
 export default function ProductScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-
-  const [listing, setListing] = useState<Listing | null>(null);
+  const { id } = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
-  const [buying, setBuying] = useState(false);
+  const [product, setProduct] = useState<any>(null);
 
   useEffect(() => {
-    if (!id) return;
-    loadListing();
-  }, [id]);
+    const fetchProduct = async () => {
+      const { data } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-  const loadListing = async () => {
-    try {
-      setLoading(true);
-      const data = await getListingById(String(id));
-      setListing(data);
-    } catch (error) {
-      console.error('Error loading listing:', error);
-      Alert.alert('Error', 'No pudimos cargar este producto.');
-    } finally {
+      setProduct(data);
       setLoading(false);
-    }
-  };
+    };
 
-  const handleBuy = async () => {
-    if (!listing) return;
-
-    try {
-      setBuying(true);
-
-      const response = await createPreference({
-        listingId: listing.id,
-      });
-
-      const checkoutUrl =
-        response.init_point || response.sandbox_init_point;
-
-      if (!checkoutUrl) {
-        throw new Error('No se recibió init_point desde Mercado Pago');
-      }
-
-      await Linking.openURL(checkoutUrl);
-    } catch (error) {
-      console.error('Error creating preference:', error);
-      Alert.alert(
-        'Error',
-        'No pudimos iniciar el checkout. Intenta de nuevo.'
-      );
-    } finally {
-      setBuying(false);
-    }
-  };
+    fetchProduct();
+  }, [id]);
 
   if (loading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff',
-        }}
-      >
+      <View style={{ flex: 1, justifyContent: 'center' }}>
         <ActivityIndicator />
       </View>
     );
   }
 
-  if (!listing) {
+  if (!product) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 24,
-          backgroundColor: '#fff',
-        }}
-      >
-        <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8 }}>
-          Producto no disponible
-        </Text>
-        <Text style={{ color: '#666', textAlign: 'center' }}>
-          Este producto ya no está disponible o no pudimos encontrarlo.
-        </Text>
+      <View style={{ padding: 20 }}>
+        <Text>Producto no encontrado</Text>
       </View>
     );
   }
 
-  const images = listing.photos?.map((photo) => photo.url) ?? [];
-  const itemPrice = listing.price_clp;
-  const insuranceFee = 990;
-  const totalWithProtection = itemPrice + insuranceFee;
-
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <ProductGallery images={images} />
+    <View style={{ flex: 1 }}>
+      <ScrollView>
+        {/* IMAGEN */}
+        <Image
+          source={{ uri: product.cover_photo_url }}
+          style={{ width: '100%', height: 400 }}
+        />
 
         <View style={{ padding: 16 }}>
-          <Text
-            style={{
-              fontSize: 22,
-              fontWeight: '700',
-              color: '#111',
-            }}
-          >
-            {listing.title}
+          {/* PRECIO */}
+          <Text style={{ fontSize: 22, fontWeight: '700' }}>
+            ${product.price_clp?.toLocaleString()}
           </Text>
 
-          <Text
-            style={{
-              fontSize: 14,
-              color: '#667085',
-              marginTop: 6,
-            }}
-          >
-            {listing.brand} · {listing.size} · {listing.condition}
+          {/* TÍTULO */}
+          <Text style={{ fontSize: 18, marginTop: 6 }}>
+            {product.title}
           </Text>
 
-          <Text
+          {/* BADGES */}
+          <View style={{ flexDirection: 'row', marginTop: 10, gap: 6 }}>
+            {product.brand && (
+              <Text style={badge}>{product.brand}</Text>
+            )}
+            {product.size && (
+              <Text style={badge}>{product.size}</Text>
+            )}
+            {product.condition && (
+              <Text style={badge}>{product.condition}</Text>
+            )}
+          </View>
+
+          {/* BLOQUE CONFIANZA */}
+          <View
             style={{
-              fontSize: 28,
-              fontWeight: '700',
-              color: '#111',
               marginTop: 16,
+              padding: 12,
+              backgroundColor: '#f6f6f6',
+              borderRadius: 10,
             }}
           >
-            ${itemPrice.toLocaleString('es-CL')}
-          </Text>
-
-          <Text
-            style={{
-              fontSize: 14,
-              color: '#667085',
-              marginTop: 4,
-            }}
-          >
-            ${(totalWithProtection).toLocaleString('es-CL')} total con protección
-          </Text>
-
-          <ProtectedAction onPress={() => {}}>
-            <Text
-              style={{
-                marginTop: 18,
-                fontSize: 15,
-                fontWeight: '500',
-                color: '#1F3A44',
-              }}
-            >
-              ♡ Guardar
+            <Text style={{ fontWeight: '600' }}>
+              Compra protegida
             </Text>
-          </ProtectedAction>
+            <Text style={{ fontSize: 13, marginTop: 4 }}>
+              Tienes 48h desde la entrega para revisar el producto antes de liberar el pago.
+            </Text>
+          </View>
+
+          {/* DESCRIPCIÓN */}
+          {product.description && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={{ fontWeight: '600' }}>
+                Descripción
+              </Text>
+              <Text style={{ marginTop: 6 }}>
+                {product.description}
+              </Text>
+            </View>
+          )}
+
+          {/* SELLER (simple por ahora) */}
+          <View style={{ marginTop: 16 }}>
+            <Text style={{ fontWeight: '600' }}>
+              Vendedor
+            </Text>
+            <Text style={{ marginTop: 4, color: '#555' }}>
+              Usuario verificado
+            </Text>
+          </View>
         </View>
       </ScrollView>
 
+      {/* CTA */}
       <View
         style={{
           padding: 16,
           borderTopWidth: 1,
-          borderTopColor: '#ECECEC',
-          backgroundColor: '#fff',
+          borderColor: '#eee',
         }}
       >
-        <ProtectedAction onPress={handleBuy}>
-          <View
-            style={{
-              backgroundColor: '#1F3A44',
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: buying ? 0.75 : 1,
-            }}
-          >
-            <Text
+        <ProtectedAction
+          onPress={() => {
+            console.log('ir a checkout');
+          }}
+        >
+          {(handlePress) => (
+            <TouchableOpacity
+              onPress={handlePress}
               style={{
-                color: '#fff',
-                fontWeight: '600',
-                fontSize: 16,
+                backgroundColor: '#000',
+                padding: 14,
+                borderRadius: 10,
               }}
             >
-              {buying ? 'Cargando...' : 'Comprar'}
-            </Text>
-          </View>
+              <Text style={{ color: '#fff', textAlign: 'center' }}>
+                Comprar
+              </Text>
+            </TouchableOpacity>
+          )}
         </ProtectedAction>
       </View>
     </View>
   );
 }
+
+const badge = {
+  fontSize: 12,
+  backgroundColor: '#eee',
+  paddingVertical: 4,
+  paddingHorizontal: 8,
+  borderRadius: 6,
+};

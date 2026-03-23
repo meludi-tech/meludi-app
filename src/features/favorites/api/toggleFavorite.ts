@@ -1,28 +1,27 @@
 import { supabase } from '@/lib/supabase';
 
-export const toggleFavorite = async ({
-  userId,
-  listingId,
-  isLiked,
-}: {
-  userId: string;
-  listingId: string;
-  isLiked: boolean;
-}) => {
-  if (isLiked) {
-    const { error } = await supabase
-      .from('listing_likes')
+export const toggleFavorite = async (listingId: string, userId: string) => {
+  const { data: existing } = await supabase
+    .from('favorites')
+    .select('id')
+    .eq('listing_id', listingId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from('favorites')
       .delete()
-      .eq('user_id', userId)
-      .eq('listing_id', listingId);
+      .eq('listing_id', listingId)
+      .eq('user_id', userId);
 
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from('listing_likes').insert({
-      user_id: userId,
-      listing_id: listingId,
-    });
-
-    if (error) throw error;
+    return false;
   }
+
+  await supabase.from('favorites').insert({
+    listing_id: listingId,
+    user_id: userId,
+  });
+
+  return true;
 };

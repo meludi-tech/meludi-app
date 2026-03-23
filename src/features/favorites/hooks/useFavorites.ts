@@ -1,32 +1,20 @@
-import { supabase } from '@/lib/supabase';
-import { useEffect, useState } from 'react';
-import { getFavorites } from '../api/getFavorites';
+import { useAuthStore } from '@/stores/auth.store';
+import { toggleFavorite } from '../api/toggleFavorite';
 
 export const useFavorites = () => {
-  const [favorites, setFavorites] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuthStore();
 
-  const fetchFavorites = async () => {
-    setLoading(true);
+  const handleToggleFavorite = async (listingId: string) => {
+    if (!user) return;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setFavorites([]);
-      setLoading(false);
-      return;
+    try {
+      await toggleFavorite(listingId, user.id);
+    } catch (e) {
+      console.log('favorite error', e);
     }
-
-    const data = await getFavorites(user.id);
-    setFavorites(data);
-    setLoading(false);
   };
 
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-  return { favorites, loading, refetch: fetchFavorites };
+  return {
+    handleToggleFavorite,
+  };
 };
