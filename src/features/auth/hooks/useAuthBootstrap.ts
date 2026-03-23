@@ -1,49 +1,49 @@
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/auth.store';
 import { useEffect } from 'react';
-import { getProfile } from '../api/getProfile';
-import { getSession } from '../api/getSession';
 
 export const useAuthBootstrap = () => {
-  const {
-    setSession,
-    setProfile,
-    setOnboardingStep,
-    setStatus,
-  } = useAuthStore();
+  const { setUser, setVerificationStatus } = useAuthStore();
 
   useEffect(() => {
     const init = async () => {
-      try {
-        const session = await getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        setSession(session);
-
-        if (!session) {
-          setStatus('UNAUTHENTICATED');
-          return;
-        }
-
-        const profile = await getProfile(session.user.id);
-
-        setProfile(profile);
-
-        if (!profile) {
-          setOnboardingStep('PRE_TRUORA');
-          return;
-        }
-
-        if (!profile.username) {
-          setOnboardingStep('USERNAME');
-          return;
-        }
-
-        setOnboardingStep('COMPLETE');
-      } catch (e) {
-        console.error(e);
-        setStatus('UNAUTHENTICATED');
+      if (!session?.user) {
+        setUser(null);
+        return;
       }
+
+      setUser(session.user);
+
+      // 🔥 traer profile (clave Truora)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('verification_status')
+        .eq('id', session.user.id)
+        .single();
+
+      setVerificationStatus(profile?.verification_status ?? null);
     };
 
     init();
+
+    // listener de cambios de sesión
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setUser(null);
+        return;
+      }
+
+      setUser(session.user);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 };

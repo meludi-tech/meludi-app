@@ -1,49 +1,41 @@
-import { AuthStatus, OnboardingStep, Profile } from '@/features/auth/types';
-import { Session, User } from '@supabase/supabase-js';
 import { create } from 'zustand';
 
-interface AuthState {
+type AuthStatus = 'anonymous' | 'authenticated' | 'verified';
+
+type AuthState = {
+  user: any | null;
   status: AuthStatus;
-  session: Session | null;
-  user: User | null;
-  profile: Profile | null;
-  onboardingStep: OnboardingStep;
-
-  setSession: (session: Session | null) => void;
-  setProfile: (profile: Profile | null) => void;
-  setOnboardingStep: (step: OnboardingStep) => void;
-  setStatus: (status: AuthStatus) => void;
-
-  reset: () => void;
-}
+  setUser: (user: any | null) => void;
+  setVerificationStatus: (verificationStatus: string | null) => void;
+};
 
 export const useAuthStore = create<AuthState>((set) => ({
-  status: 'LOADING',
-  session: null,
   user: null,
-  profile: null,
-  onboardingStep: 'NONE',
+  status: 'anonymous',
 
-  setSession: (session: Session | null) =>
+  setUser: (user) => {
+    if (!user) {
+      set({ user: null, status: 'anonymous' });
+      return;
+    }
+
     set({
-      session,
-      user: session?.user ?? null,
-      status: session ? 'AUTHENTICATED' : 'UNAUTHENTICATED',
-    }),
+      user,
+      status: 'authenticated',
+    });
+  },
 
-  setProfile: (profile: Profile | null) => set({ profile }),
-
-  setOnboardingStep: (step: OnboardingStep) =>
-    set({ onboardingStep: step }),
-
-  setStatus: (status: AuthStatus) => set({ status }),
-
-  reset: () =>
-    set({
-      status: 'UNAUTHENTICATED',
-      session: null,
-      user: null,
-      profile: null,
-      onboardingStep: 'NONE',
-    }),
+  setVerificationStatus: (verificationStatus) => {
+    if (verificationStatus === 'verified') {
+      set((state) => ({
+        ...state,
+        status: 'verified',
+      }));
+    } else {
+      set((state) => ({
+        ...state,
+        status: 'authenticated',
+      }));
+    }
+  },
 }));

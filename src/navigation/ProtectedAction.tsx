@@ -1,25 +1,46 @@
 import { useAuthStore } from '@/stores/auth.store';
-import { useRouter } from 'expo-router';
-import { Pressable } from 'react-native';
+import { router } from 'expo-router';
+import { Alert } from 'react-native';
 
-export const ProtectedAction = ({
-  onPress,
-  children,
-}: {
+type Props = {
+  children: (onPress: () => void) => React.ReactNode;
   onPress: () => void;
-  children: React.ReactNode;
-}) => {
-  const router = useRouter();
-  const session = useAuthStore((s) => s.session);
+};
+
+export const ProtectedAction = ({ children, onPress }: Props) => {
+  const { status } = useAuthStore();
 
   const handlePress = () => {
-    if (!session) {
-      router.push('/(auth)/login');
+    // ✅ usuario verificado → pasa
+    if (status === 'verified') {
+      onPress();
       return;
     }
 
-    onPress();
+    // 🔓 usuario no logueado → signup
+    if (status === 'anonymous') {
+      router.push('/(auth)/signup');
+      return;
+    }
+
+    // ⚠️ logueado pero no verificado
+    Alert.alert(
+      'Verifica tu identidad',
+      'Necesitas verificar tu identidad para realizar esta acción.',
+      [
+        {
+          text: 'Verificar',
+          onPress: () => {
+            router.push('/(auth)/pre-truora'); // luego lo conectamos real
+          },
+        },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+      ]
+    );
   };
 
-  return <Pressable onPress={handlePress}>{children}</Pressable>;
+  return <>{children(handlePress)}</>;
 };
