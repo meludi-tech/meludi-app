@@ -1,46 +1,48 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-
-const ACTIVE = '#1F3A44';
-const INACTIVE = '#9CA3AF';
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: ACTIVE,
-        tabBarInactiveTintColor: INACTIVE,
+        tabBarActiveTintColor: "#1F3A44",
+        tabBarInactiveTintColor: "#9CA3AF",
+
         tabBarStyle: {
-          height: 84,
-          paddingTop: 8,
-          paddingBottom: 18,
+          backgroundColor: "#FFFFFF",
           borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          backgroundColor: '#FFFFFF',
+          borderTopColor: "#E5E7EB",
+
+          height: 60 + insets.bottom, // 👈 clave
+          paddingBottom: insets.bottom, // 👈 clave
+          paddingTop: 6,
         },
+
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 11,
         },
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="home/index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          title: "Inicio",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" size={22} color={color} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="search"
+        name="search/index"
         options={{
-          title: 'Buscar',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
+          title: "Buscar",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="search-outline" size={22} color={color} />
           ),
         }}
       />
@@ -48,29 +50,29 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="sell"
         options={{
-          title: 'Vender',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle-outline" size={size} color={color} />
+          title: "Vender",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="add-circle-outline" size={26} color={color} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="inbox"
+        name="inbox/index"
         options={{
-          title: 'Inbox',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
+          title: "Mensajes",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="mail-outline" size={22} color={color} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="profile"
+        name="profile/index"
         options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          title: "Perfil",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-outline" size={22} color={color} />
           ),
         }}
       />

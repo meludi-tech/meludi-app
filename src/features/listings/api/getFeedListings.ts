@@ -16,6 +16,7 @@ export const getFeedListings = async (): Promise<Listing[]> => {
         url
       )
     `)
+    .eq('status', 'ACTIVE')
     .order('created_at', { ascending: false });
 
   if (error) throw error;

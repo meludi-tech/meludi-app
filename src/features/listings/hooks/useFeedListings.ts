@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 export type Listing = {
   id: string;
   title: string;
-  price: number;
+  price_clp: number;
   brand: string | null;
   size: string | null;
   condition: string | null;
@@ -24,7 +24,7 @@ export const useFeedListings = () => {
       .select(`
         id,
         title,
-        price,
+        price_clp,
         brand,
         size,
         condition,
@@ -36,7 +36,7 @@ export const useFeedListings = () => {
       .limit(20);
 
     if (error) {
-      console.error(error);
+      console.error('Feed error:', error);
       setLoading(false);
       return;
     }

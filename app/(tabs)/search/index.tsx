@@ -1,102 +1,82 @@
-import { ListingCard } from '@/components/listings/ListingCard';
-import { useSearch } from '@/features/search/hooks/useSearch';
-import { useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+const categories = [
+  "Mujer",
+  "Hombre",
+  "Moda de diseño",
+  "Niños",
+  "Hogar",
+  "Electrónica",
+  "Entretenimiento",
+  "Hobbies y coleccionismo",
+  "Deportes",
+];
 
 export default function SearchScreen() {
-  const { results, loading, search } = useSearch();
-
-  const [query, setQuery] = useState('');
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
-
-  const onSearch = () => {
-    search({
-      query,
-      minPrice: minPrice ? Number(minPrice) : undefined,
-      maxPrice: maxPrice ? Number(maxPrice) : undefined,
-    });
-  };
-
   return (
-    <View style={{ flex: 1, padding: 12 }}>
-      {/* INPUT BUSQUEDA */}
-      <TextInput
-        placeholder="Buscar productos"
-        value={query}
-        onChangeText={setQuery}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          borderRadius: 10,
-          padding: 10,
-          marginBottom: 10,
-        }}
-      />
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0F1E22" }}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: "#0A1417",
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            height: 52,
+            marginBottom: 18,
+          }}
+        >
+          <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+          <TextInput
+            placeholder="Busca artículos o miembros"
+            placeholderTextColor="#9CA3AF"
+            style={{
+              flex: 1,
+              marginLeft: 10,
+              color: "#FFFFFF",
+              fontSize: 16,
+            }}
+          />
+          <Ionicons name="camera-outline" size={20} color="#6E8A94" />
+        </View>
 
-      {/* FILTROS */}
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <TextInput
-          placeholder="Min $"
-          value={minPrice}
-          onChangeText={setMinPrice}
-          keyboardType="numeric"
-          style={inputSmall}
-        />
-
-        <TextInput
-          placeholder="Max $"
-          value={maxPrice}
-          onChangeText={setMaxPrice}
-          keyboardType="numeric"
-          style={inputSmall}
-        />
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            rowGap: 12,
+          }}
+        >
+          {categories.map((category) => (
+            <Pressable
+              key={category}
+              style={{
+                width: "48.5%",
+                minHeight: 96,
+                backgroundColor: "#0A1417",
+                borderRadius: 16,
+                padding: 16,
+                justifyContent: "flex-start",
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: 17,
+                  fontWeight: "600",
+                  lineHeight: 22,
+                }}
+              >
+                {category}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
-
-      {/* BOTON */}
-      <TouchableOpacity
-        onPress={onSearch}
-        style={{
-          backgroundColor: '#000',
-          padding: 12,
-          borderRadius: 10,
-          marginTop: 10,
-        }}
-      >
-        <Text style={{ color: '#fff', textAlign: 'center' }}>
-          Buscar
-        </Text>
-      </TouchableOpacity>
-
-      {/* RESULTADOS */}
-      {loading ? (
-        <ActivityIndicator style={{ marginTop: 20 }} />
-      ) : (
-        <FlatList
-          data={results}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={{ marginTop: 12 }}
-          renderItem={({ item }) => (
-            <ListingCard listing={item} />
-          )}
-        />
-      )}
-    </View>
+    </SafeAreaView>
   );
 }
-
-const inputSmall = {
-  flex: 1,
-  borderWidth: 1,
-  borderColor: '#ccc',
-  borderRadius: 10,
-  padding: 10,
-};

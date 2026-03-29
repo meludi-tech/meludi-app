@@ -38,29 +38,46 @@ export default function HomeScreen() {
     loadFeed();
   }, []);
 
+  // 🔥 FEED DESDE BACKEND INTELIGENTE
   const loadFeed = async () => {
-    const { data, error } = await supabase
-      .from('listings')
-      .select(`
-        id,
-        title,
-        price_clp,
-        brand,
-        size,
-        condition,
-        cover_photo_url,
-        category,
-        is_active
-      `)
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(30);
+    try {
+      const { data, error } = await supabase
+  .from('listings')
+  .select(`
+    id,
+    title,
+    price_clp,
+    condition,
+    brand,
+    size,
+    category,
+    created_at,
+    listing_photos ( url )
+  `)
+  .eq('status', 'ACTIVE')
+  .order('created_at', { ascending: false })
+  .limit(30);
+  if (error) {
+  console.log('Feed error:', error);
+  setListings([]);
+} else {
+  const mapped = (data || []).map((item: any) => ({
+    ...item,
+    cover_photo_url: item.listing_photos?.[0]?.url || null,
+  }));
 
-    if (error) {
-      console.log('Feed error:', error);
+  setListings(mapped);
+}
+
+      if (error) {
+        console.log('Feed error:', error);
+        setListings([]);
+      } else {
+        setListings(data || []);
+      }
+    } catch (err) {
+      console.log('Unexpected error:', err);
       setListings([]);
-    } else {
-      setListings(data || []);
     }
 
     setLoading(false);
@@ -144,7 +161,7 @@ export default function HomeScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 20 }} // 👈 FIX ESPACIADO
+        style={{ marginBottom: 20 }}
       >
         {categories.map((cat) => {
           const active = cat === activeCategory;
@@ -224,7 +241,7 @@ export default function HomeScreen() {
           {item.title}
         </Text>
 
-        {/* BADGES (FIJOS Y ALINEADOS) */}
+        {/* BADGES */}
         <View
           style={{
             flexDirection: 'row',
@@ -238,7 +255,7 @@ export default function HomeScreen() {
 
         {/* PRICE */}
         <Text style={{ fontSize: 18, fontWeight: '700' }}>
-          ${item.price_clp?.toLocaleString('es-CL')}
+          ${Number(item.price_clp || 0).toLocaleString('es-CL')}
         </Text>
 
         <Text style={{ fontSize: 12, color: MUTED }}>
@@ -265,7 +282,7 @@ export default function HomeScreen() {
           }}
           columnWrapperStyle={{
             justifyContent: 'space-between',
-            marginBottom: 24, // 👈 separación vertical FIX
+            marginBottom: 24,
           }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

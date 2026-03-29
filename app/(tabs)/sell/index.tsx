@@ -1,48 +1,92 @@
-import { useCreateListing } from '@/features/sell/hooks/useCreateListing';
-import { ProtectedAction } from '@/navigation/ProtectedAction';
+import {
+  createListing,
+  uploadListingImages,
+} from '@/features/sell/api/createListing';
+import { useSellStore } from '@/features/sell/store/useSellStore';
+import { supabase } from '@/lib/supabase';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
+  Pressable,
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SellScreen() {
-  const { handleCreateListing } = useCreateListing();
+  const {
+    title,
+    description,
+    price,
+    category,
+    brand,
+    size,
+    condition,
+    color, // ✅ NUEVO
+    images,
+    setField,
+    addImages,
+    reset,
+  } = useSellStore();
 
-  const [title, setTitle] = useState('');
-  const [price, setPrice] = useState('');
-  const [brand, setBrand] = useState('');
-  const [size, setSize] = useState('');
-  const [condition, setCondition] = useState('');
-  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const onSubmit = async () => {
+  // 📸 PICK IMAGES
+  const pickImages = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const uris = result.assets.map((a: any) => a.uri);
+      addImages(uris);
+    }
+  };
+
+  // 🚀 PUBLICAR
+  const handlePublish = async () => {
+    if (!title || !price || images.length === 0) {
+      Alert.alert('Completa título, precio y fotos');
+      return;
+    }
+
     try {
       setLoading(true);
 
-      const listing = await handleCreateListing({
-        title,
-        description,
-        price_clp: Number(price),
-        brand,
-        size,
-        condition,
-        cover_photo_url:
-          'https://via.placeholder.com/400x400.png?text=Producto',
-      });
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      Alert.alert('Publicado 🎉');
+      if (!user) throw new Error('No user');
 
-      // 👉 ir al producto recién creado
-      router.push(`/product/${listing.id}`);
-    } catch (e) {
-      console.log(e);
+      const listing = await createListing(
+        {
+          title,
+          description,
+          price,
+          category,
+          brand,
+          size,
+          condition,
+          color, // ✅ NUEVO
+        },
+        user.id
+      );
+
+      await uploadListingImages(images, listing.id);
+
+      Alert.alert('Publicado 🚀');
+
+      reset();
+      router.replace('/(tabs)/home');
+    } catch (err) {
+      console.log(err);
       Alert.alert('Error al publicar');
     } finally {
       setLoading(false);
@@ -50,66 +94,169 @@ export default function SellScreen() {
   };
 
   return (
-    <ScrollView style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 16 }}>
-        Vender
-      </Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 140,
+        }}
+      >
+        {/* HEADER */}
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: '700',
+            marginBottom: 20,
+          }}
+        >
+          Vender
+        </Text>
 
-      <Input label="Título" value={title} onChange={setTitle} />
-      <Input label="Precio" value={price} onChange={setPrice} keyboardType="numeric" />
-      <Input label="Marca" value={brand} onChange={setBrand} />
-      <Input label="Talla" value={size} onChange={setSize} />
-      <Input label="Estado" value={condition} onChange={setCondition} />
+        {/* 📸 FOTOS */}
+        <Pressable
+          onPress={pickImages}
+          style={{
+            borderWidth: 1,
+            borderColor: '#E5E7EB',
+            borderRadius: 16,
+            padding: 20,
+            alignItems: 'center',
+            marginBottom: 12,
+          }}
+        >
+          <Text style={{ fontSize: 14 }}>+ Agregar fotos</Text>
+        </Pressable>
 
-      <Input
-        label="Descripción"
-        value={description}
-        onChange={setDescription}
-        multiline
-      />
-
-      <ProtectedAction onPress={onSubmit}>
-        {(handlePress) => (
-          <TouchableOpacity
-            onPress={handlePress}
-            style={{
-              marginTop: 20,
-              backgroundColor: '#000',
-              padding: 14,
-              borderRadius: 10,
-            }}
-            disabled={loading}
+        {/* PREVIEW */}
+        {images.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: 20 }}
           >
-            <Text style={{ color: '#fff', textAlign: 'center' }}>
-              {loading ? 'Publicando...' : 'Publicar'}
-            </Text>
-          </TouchableOpacity>
+            {images.map((uri, i) => (
+              <Image
+                key={i}
+                source={{ uri }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 12,
+                  marginRight: 10,
+                }}
+              />
+            ))}
+          </ScrollView>
         )}
-      </ProtectedAction>
-    </ScrollView>
+
+        {/* INPUTS */}
+        <Input
+          label="Título"
+          value={title}
+          placeholder="Ej: Chaqueta Zara negra"
+          onChange={(v: string) => setField('title', v)}
+        />
+
+        <Select label="Categoría" value={category} route="/(tabs)/sell/category" />
+
+        <Select label="Marca" value={brand} route="/(tabs)/sell/brand" />
+
+        <Select label="Talla" value={size} route="/(tabs)/sell/size" />
+
+        <Select label="Estado" value={condition} route="/(tabs)/sell/condition" />
+
+        {/* 🎨 COLOR NUEVO */}
+        <Select label="Color" value={color} route="/(tabs)/sell/color" />
+
+        <Input
+          label="Precio"
+          value={price}
+          placeholder="Ej: 25000"
+          keyboard="numeric"
+          onChange={(v: string) => setField('price', v)}
+        />
+
+        <Input
+          label="Descripción"
+          value={description}
+          placeholder="Describe tu producto"
+          multiline
+          onChange={(v: string) => setField('description', v)}
+        />
+
+        {/* BOTÓN */}
+        <Pressable
+          onPress={handlePublish}
+          style={{
+            backgroundColor: '#1F3A44',
+            padding: 18,
+            borderRadius: 16,
+            marginTop: 24,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ color: '#fff', fontWeight: '600' }}>
+            {loading ? 'Publicando...' : 'Publicar'}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-const Input = ({
+/* ---------------- COMPONENTES ---------------- */
+
+function Input({
   label,
   value,
   onChange,
-  multiline = false,
-  keyboardType = 'default',
-}: any) => (
-  <View style={{ marginBottom: 12 }}>
-    <Text style={{ marginBottom: 4 }}>{label}</Text>
-    <TextInput
-      value={value}
-      onChangeText={onChange}
-      multiline={multiline}
-      keyboardType={keyboardType}
-      style={{
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        padding: 10,
-      }}
-    />
-  </View>
-);
+  placeholder,
+  multiline,
+  keyboard,
+}: any) {
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={{ marginBottom: 6 }}>{label}</Text>
+
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        multiline={multiline}
+        keyboardType={keyboard}
+        style={{
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          borderRadius: 12,
+          padding: 14,
+          height: multiline ? 80 : 50,
+        }}
+      />
+    </View>
+  );
+}
+
+function Select({ label, value, route }: any) {
+  return (
+    <Pressable
+      onPress={() => router.push(route)}
+      style={{ marginBottom: 16 }}
+    >
+      <Text style={{ marginBottom: 6 }}>{label}</Text>
+
+      <View
+        style={{
+          borderWidth: 1,
+          borderColor: '#E5E7EB',
+          borderRadius: 12,
+          padding: 14,
+        }}
+      >
+        <Text style={{ color: value ? '#000' : '#9CA3AF' }}>
+          {value || 'Seleccionar'}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
