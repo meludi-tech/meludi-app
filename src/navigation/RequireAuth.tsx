@@ -4,15 +4,16 @@ import { useEffect } from 'react';
 
 export const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
-  const session = useAuthStore((s) => s.session);
+  const { user, isBootstrapped } = useAuthStore();
 
   useEffect(() => {
-    if (!session) {
+    if (isBootstrapped && !user) {
       router.replace('/(auth)/login');
     }
-  }, [session]);
+  }, [isBootstrapped, user, router]);
 
-  if (!session) return null;
+  if (!isBootstrapped) return null;
+  if (!user) return null;
 
   return <>{children}</>;
 };

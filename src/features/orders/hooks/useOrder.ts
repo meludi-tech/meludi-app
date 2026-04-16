@@ -1,26 +1,41 @@
 import { useEffect, useState } from 'react';
-import { getOrderById } from '../api/getOrderById';
-import { Order } from '../types';
+import { supabase } from '../../../lib/supabase';
 
-export const useOrder = (orderId?: string) => {
-  const [order, setOrder] = useState<Order | null>(null);
+export function useOrder(id?: string) {
+  const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadOrder = async () => {
-    if (!orderId) return;
-
-    setLoading(true);
-    const data = await getOrderById(orderId);
-    setOrder(data);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    loadOrder();
-  }, [orderId]);
+    if (!id) return;
 
-  return {
-    order,
-    loading,
-  };
-};
+    const fetchOrder = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          listing:listings (
+            title,
+            price_clp,
+            cover_photo_url
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.log('ORDER ERROR:', error);
+        setOrder(null);
+      } else {
+        setOrder(data);
+      }
+
+      setLoading(false);
+    };
+
+    fetchOrder();
+  }, [id]);
+
+  return { order, loading };
+}

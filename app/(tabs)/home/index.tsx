@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { ProtectedAction } from '@/navigation/ProtectedAction';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -38,49 +39,43 @@ export default function HomeScreen() {
     loadFeed();
   }, []);
 
-  // 🔥 FEED DESDE BACKEND INTELIGENTE
   const loadFeed = async () => {
     try {
-      const { data, error } = await supabase
-  .from('listings')
-  .select(`
-    id,
-    title,
-    price_clp,
-    condition,
-    brand,
-    size,
-    category,
-    created_at,
-    listing_photos ( url )
-  `)
-  .eq('status', 'ACTIVE')
-  .order('created_at', { ascending: false })
-  .limit(30);
-  if (error) {
-  console.log('Feed error:', error);
-  setListings([]);
-} else {
-  const mapped = (data || []).map((item: any) => ({
-    ...item,
-    cover_photo_url: item.listing_photos?.[0]?.url || null,
-  }));
+      setLoading(true);
 
-  setListings(mapped);
-}
+      const { data, error } = await supabase
+        .from('listings')
+        .select(`
+          id,
+          title,
+          price_clp,
+          condition,
+          brand,
+          size,
+          category,
+          created_at,
+          cover_photo_url
+        `)
+        .eq('status', 'ACTIVE')
+        .order('created_at', { ascending: false })
+        .limit(30);
 
       if (error) {
         console.log('Feed error:', error);
         setListings([]);
       } else {
-        setListings(data || []);
+        const mapped = (data || []).filter(
+          (item: any) => item.cover_photo_url
+        );
+
+        setListings(mapped);
       }
     } catch (err) {
       console.log('Unexpected error:', err);
       setListings([]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const onRefresh = useCallback(async () => {
@@ -100,7 +95,6 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View>
-      {/* HEADER */}
       <View
         style={{
           flexDirection: 'row',
@@ -116,20 +110,24 @@ export default function HomeScreen() {
         </View>
 
         <View style={{ flexDirection: 'row' }}>
-          <Pressable
-            onPress={() => router.push('/notifications')}
-            style={{ marginRight: 16 }}
-          >
-            <Ionicons name="notifications-outline" size={26} />
-          </Pressable>
+          <ProtectedAction onPress={() => router.push('/notifications')}>
+            {(handlePress) => (
+              <Pressable onPress={handlePress} style={{ marginRight: 16 }}>
+                <Ionicons name="notifications-outline" size={26} />
+              </Pressable>
+            )}
+          </ProtectedAction>
 
-          <Pressable onPress={() => router.push('/favorites')}>
-            <Ionicons name="heart-outline" size={26} />
-          </Pressable>
+          <ProtectedAction onPress={() => router.push('/favorites')}>
+            {(handlePress) => (
+              <Pressable onPress={handlePress}>
+                <Ionicons name="heart-outline" size={26} />
+              </Pressable>
+            )}
+          </ProtectedAction>
         </View>
       </View>
 
-      {/* SEARCH */}
       <Pressable
         onPress={() => router.push('/(tabs)/search')}
         style={{
@@ -145,7 +143,6 @@ export default function HomeScreen() {
         <Ionicons name="options-outline" size={20} color={PRIMARY} />
       </Pressable>
 
-      {/* TITLE */}
       <View
         style={{
           flexDirection: 'row',
@@ -157,12 +154,7 @@ export default function HomeScreen() {
         <Text style={{ color: PRIMARY }}>See All</Text>
       </View>
 
-      {/* CATEGORIES */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginBottom: 20 }}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {categories.map((cat) => {
           const active = cat === activeCategory;
 
@@ -192,11 +184,8 @@ export default function HomeScreen() {
     return (
       <Pressable
         onPress={() => router.push(`/product/${item.id}`)}
-        style={{
-          width: CARD_WIDTH,
-        }}
+        style={{ width: CARD_WIDTH }}
       >
-        {/* IMAGE */}
         <View
           style={{
             height: CARD_WIDTH * 1.1,
@@ -206,54 +195,44 @@ export default function HomeScreen() {
             marginBottom: 10,
           }}
         >
-          {item.cover_photo_url && (
-            <Image
-              source={{ uri: item.cover_photo_url }}
-              style={{ width: '100%', height: '100%' }}
-            />
-          )}
-
-          {/* HEART */}
-          <Pressable
-            onPress={() => router.push('/(auth)/signup')}
-            style={{
-              position: 'absolute',
-              top: 10,
-              right: 10,
-              backgroundColor: '#fff',
-              borderRadius: 999,
-              padding: 6,
+          <Image
+            source={{
+              uri:
+                item.cover_photo_url ||
+                'https://via.placeholder.com/300',
             }}
-          >
-            <Ionicons name="heart-outline" size={16} />
-          </Pressable>
+            style={{ width: '100%', height: '100%' }}
+          />
+
+          <ProtectedAction onPress={() => router.push('/favorites')}>
+            {(handlePress) => (
+              <Pressable
+                onPress={handlePress}
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 10,
+                  backgroundColor: '#fff',
+                  borderRadius: 999,
+                  padding: 6,
+                }}
+              >
+                <Ionicons name="heart-outline" size={16} />
+              </Pressable>
+            )}
+          </ProtectedAction>
         </View>
 
-        {/* TITLE */}
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: 14,
-            marginBottom: 6,
-            fontWeight: '500',
-          }}
-        >
+        <Text numberOfLines={1} style={{ fontSize: 14, marginBottom: 6, fontWeight: '500' }}>
           {item.title}
         </Text>
 
-        {/* BADGES */}
-        <View
-          style={{
-            flexDirection: 'row',
-            marginBottom: 8,
-          }}
-        >
+        <View style={{ flexDirection: 'row', marginBottom: 8 }}>
           {item.brand && <Badge label={item.brand} />}
           {item.size && <Badge label={item.size} />}
           {item.condition && <Badge label={item.condition} />}
         </View>
 
-        {/* PRICE */}
         <Text style={{ fontSize: 18, fontWeight: '700' }}>
           ${Number(item.price_clp || 0).toLocaleString('es-CL')}
         </Text>
@@ -304,13 +283,7 @@ function Badge({ label }: { label: string }) {
         marginRight: 6,
       }}
     >
-      <Text
-        numberOfLines={1}
-        style={{
-          fontSize: 11,
-          color: '#374151',
-        }}
-      >
+      <Text numberOfLines={1} style={{ fontSize: 11, color: '#374151' }}>
         {label}
       </Text>
     </View>

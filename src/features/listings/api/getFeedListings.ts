@@ -11,17 +11,21 @@ export const getFeedListings = async (): Promise<Listing[]> => {
       condition,
       brand,
       size,
+      cover_photo_url,
       created_at,
       listing_photos (
-        url
+        image_url
       )
     `)
     .eq('status', 'ACTIVE')
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.log('FEED ERROR:', error);
+    throw error;
+  }
 
-  return data.map((item: any) => ({
+  return (data || []).map((item: any) => ({
     ...item,
     photos: item.listing_photos || [],
   }));

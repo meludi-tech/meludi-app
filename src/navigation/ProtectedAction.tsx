@@ -1,45 +1,52 @@
 import { useAuthStore } from '@/stores/auth.store';
 import { router } from 'expo-router';
-import { Alert } from 'react-native';
+import React from 'react';
 
 type Props = {
   children: (onPress: () => void) => React.ReactNode;
   onPress: () => void;
+  requireVerified?: boolean;
 };
 
-export const ProtectedAction = ({ children, onPress }: Props) => {
+export const ProtectedAction = ({
+  children,
+  onPress,
+  requireVerified = true,
+}: Props) => {
   const { status } = useAuthStore();
 
   const handlePress = () => {
-    // ✅ usuario verificado → pasa
-    if (status === 'verified') {
-      onPress();
-      return;
-    }
-
-    // 🔓 usuario no logueado → signup
-    if (status === 'anonymous') {
+    // 🔥 1. Usuario no logueado
+    if (status === 'ANONYMOUS') {
       router.push('/(auth)/signup');
       return;
     }
 
-    // ⚠️ logueado pero no verificado
-    Alert.alert(
-      'Verifica tu identidad',
-      'Necesitas verificar tu identidad para realizar esta acción.',
-      [
-        {
-          text: 'Verificar',
-          onPress: () => {
-            router.push('/(auth)/pre-truora'); // luego lo conectamos real
-          },
-        },
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-      ]
-    );
+    // 🔥 2. Usuario verificado
+    if (status === 'VERIFIED') {
+      onPress();
+      return;
+    }
+
+    // 🔥 3. Usuario en proceso
+    if (status === 'PENDING') {
+      router.push('/(auth)/post-truora');
+      return;
+    }
+
+    // 🔥 4. Usuario no iniciado o rechazado
+    if (status === 'REJECTED' || status === 'NOT_STARTED') {
+      router.push('/verify');
+      return;
+    }
+
+    // 🔥 fallback (por si algo raro pasa)
+    if (requireVerified) {
+      router.push('/verify');
+      return;
+    }
+
+    onPress();
   };
 
   return <>{children(handlePress)}</>;

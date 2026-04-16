@@ -1,9 +1,10 @@
 import { useWallet } from '@/features/wallet/hooks/useWallet';
 import {
-    ActivityIndicator,
-    FlatList,
-    Text,
-    View,
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 
 export default function WalletScreen() {
@@ -11,56 +12,169 @@ export default function WalletScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <View style={styles.center}>
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700' }}>
-        Wallet
-      </Text>
+    <View style={styles.container}>
+      {/* HEADER */}
+      <Text style={styles.title}>Tu dinero</Text>
 
       {/* SALDOS */}
-      <View style={{ marginTop: 20 }}>
-        <Text style={{ fontSize: 16 }}>
-          Disponible: ${available.toLocaleString()}
+      <View style={styles.balanceBox}>
+        <Text style={styles.availableLabel}>Disponible</Text>
+        <Text style={styles.availableAmount}>
+          ${available.toLocaleString()}
         </Text>
 
-        <Text style={{ marginTop: 6, color: '#666' }}>
-          Retenido: ${held.toLocaleString()}
+        <View style={styles.divider} />
+
+        <Text style={styles.heldLabel}>En protección</Text>
+        <Text style={styles.heldAmount}>
+          ${held.toLocaleString()}
+        </Text>
+
+        <Text style={styles.info}>
+          Este dinero se libera automáticamente 48h después de la entrega.
         </Text>
       </View>
 
       {/* HISTORIAL */}
-      <Text style={{ marginTop: 20, fontWeight: '600' }}>
-        Movimientos
-      </Text>
+      <Text style={styles.sectionTitle}>Movimientos</Text>
 
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ marginTop: 10 }}
-        renderItem={({ item }) => (
-          <View
-            style={{
-              padding: 12,
-              borderBottomWidth: 1,
-              borderColor: '#eee',
-            }}
-          >
-            <Text style={{ fontWeight: '600' }}>
-              ${Number(item.amount).toLocaleString()}
-            </Text>
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            Aún no tienes movimientos
+          </Text>
+        }
+        renderItem={({ item }) => {
+          const isPositive = Number(item.amount) > 0;
 
-            <Text style={{ fontSize: 12, color: '#666' }}>
-              {item.type} — {item.reason || 'Movimiento'}
-            </Text>
-          </View>
-        )}
+          return (
+            <View style={styles.item}>
+              <View>
+                <Text style={styles.itemTitle}>
+                  {item.reason || 'Movimiento'}
+                </Text>
+
+                <Text style={styles.itemSubtitle}>
+                  {item.type}
+                </Text>
+              </View>
+
+              <Text
+                style={[
+                  styles.amount,
+                  { color: isPositive ? '#0A7F5A' : '#111' },
+                ]}
+              >
+                {isPositive ? '+' : ''}
+                ${Number(item.amount).toLocaleString()}
+              </Text>
+            </View>
+          );
+        }}
       />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    padding: 16,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+
+  balanceBox: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#F6F6F4',
+    borderRadius: 14,
+  },
+
+  availableLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+
+  availableAmount: {
+    fontSize: 26,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#ddd',
+    marginVertical: 14,
+  },
+
+  heldLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+
+  heldAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+
+  info: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#6B7280',
+  },
+
+  sectionTitle: {
+    marginTop: 24,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+
+  item: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+
+  itemTitle: {
+    fontWeight: '500',
+  },
+
+  itemSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+
+  amount: {
+    fontWeight: '600',
+  },
+
+  empty: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#666',
+  },
+});

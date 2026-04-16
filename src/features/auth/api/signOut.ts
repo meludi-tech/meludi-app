@@ -1,7 +1,9 @@
 import { supabase } from '@/lib/supabase';
 
-export const signOut = async () => {
+export async function signOut() {
   const { error } = await supabase.auth.signOut();
 
-  if (error) throw error;
-};
+  if (error) {
+    throw error;
+  }
+}

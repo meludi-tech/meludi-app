@@ -1,15 +1,16 @@
 {
   "expo": {
-    "name": "meludi-app",
+    "name": "meludi",
     "slug": "meludi-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "meludiapp",
+    "scheme": "meludi",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.meludi-app"
     },
     "android": {
       "adaptiveIcon": {

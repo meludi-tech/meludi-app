@@ -1,101 +1,145 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const sections = [
+// 🔥 esto luego viene de backend
+const notifications = [
   {
-    title: 'Hoy',
-    items: [
-      { id: '1', title: 'Pago', body: 'Tu pago quedó protegido.', icon: 'lock-closed' as const },
-    ],
+    id: '1',
+    title: 'Pago protegido',
+    body: 'Tu pago quedó protegido.',
+    icon: 'lock-closed',
+    route: '/orders',
   },
   {
-    title: 'Ayer',
-    items: [
-      { id: '2', title: 'Pago', body: 'El pago se liberará cuando el pedido llegue.', icon: 'wallet' as const },
-      { id: '3', title: 'Envíos', body: 'Tu pedido va en camino.', icon: 'location' as const },
-    ],
+    id: '2',
+    title: 'Pedido en camino',
+    body: 'Tu pedido va en camino.',
+    icon: 'location',
+    route: '/orders',
   },
   {
-    title: 'Diciembre 22, 2025',
-    items: [
-      { id: '4', title: 'Cuenta', body: 'Tu cuenta quedó lista para usar.', icon: 'card' as const },
-      { id: '5', title: 'Cuenta', body: 'Método de pago agregado correctamente.', icon: 'person' as const },
-    ],
+    id: '3',
+    title: 'Dinero disponible',
+    body: 'Tu saldo fue liberado.',
+    icon: 'wallet',
+    route: '/profile/wallet',
   },
 ];
 
 export default function NotificationsScreen() {
+  const isEmpty = notifications.length === 0;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 24,
-          }}
-        >
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* HEADER */}
+        <View style={styles.header}>
           <Pressable onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#111827" />
+            <Ionicons name="arrow-back" size={24} color="#111" />
           </Pressable>
 
-          <Text style={{ flex: 1, marginLeft: 14, fontSize: 28, fontWeight: '700', color: '#111827' }}>
-            Notificaciones
-          </Text>
+          <Text style={styles.title}>Notificaciones</Text>
 
-          <Ionicons name="ellipsis-horizontal-circle-outline" size={24} color="#111827" />
+          <View style={{ width: 24 }} />
         </View>
 
-        {sections.map((section) => (
-          <View key={section.title} style={{ marginBottom: 22 }}>
-            <Text style={{ fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 14 }}>
-              {section.title}
+        {/* EMPTY */}
+        {isEmpty && (
+          <View style={styles.empty}>
+            <Ionicons name="notifications-outline" size={40} color="#ccc" />
+            <Text style={styles.emptyText}>
+              Aún no tienes notificaciones
             </Text>
-
-            {section.items.map((item) => (
-              <View
-                key={item.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  backgroundColor: '#FAFAFA',
-                  borderRadius: 18,
-                  paddingHorizontal: 14,
-                  paddingVertical: 16,
-                  marginBottom: 12,
-                }}
-              >
-                <View
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 999,
-                    backgroundColor: '#111827',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 14,
-                  }}
-                >
-                  <Ionicons name={item.icon} size={20} color="#FFFFFF" />
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 3 }}>
-                    {item.title}
-                  </Text>
-                  <Text style={{ fontSize: 14, color: '#6B7280' }}>{item.body}</Text>
-                </View>
-              </View>
-            ))}
           </View>
-        ))}
+        )}
+
+        {/* LISTA */}
+        {!isEmpty &&
+          notifications.map((item) => (
+            <Pressable
+              key={item.id}
+              style={styles.item}
+              onPress={() => router.push(item.route as any)}
+            >
+              <View style={styles.icon}>
+                <Ionicons name={item.icon as any} size={20} color="#fff" />
+              </View>
+
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemTitle}>{item.title}</Text>
+                <Text style={styles.itemBody}>{item.body}</Text>
+              </View>
+            </Pressable>
+          ))}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+
+  content: {
+    padding: 20,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+
+  title: {
+    flex: 1,
+    marginLeft: 14,
+    fontSize: 24,
+    fontWeight: '700',
+  },
+
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+  },
+
+  icon: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+
+  itemTitle: {
+    fontWeight: '600',
+  },
+
+  itemBody: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+
+  empty: {
+    marginTop: 80,
+    alignItems: 'center',
+  },
+
+  emptyText: {
+    marginTop: 10,
+    color: '#888',
+  },
+});

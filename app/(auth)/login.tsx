@@ -1,5 +1,4 @@
 import { signIn } from '@/features/auth/api/signIn';
-import { useAuthStore } from '@/stores/auth.store';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -9,15 +8,13 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIMARY = '#1F3A44';
 
 export default function LoginScreen() {
-  const setSession = useAuthStore((s) => s.setSession);
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,13 +27,8 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      const session = await signIn(email.trim(), password);
-
-      if (session) {
-        setSession(session);
-      }
-
-      router.replace('/(auth)/pre-truora');
+      await signIn(email.trim(), password);
+      router.replace('/(tabs)/home');
     } catch (error: any) {
       Alert.alert('No pudimos iniciar sesión', error?.message || 'Intenta de nuevo.');
     } finally {

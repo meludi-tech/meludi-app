@@ -5,13 +5,18 @@ type AuthStatus = 'anonymous' | 'authenticated' | 'verified';
 type AuthState = {
   user: any | null;
   status: AuthStatus;
+  isBootstrapped: boolean;
+
   setUser: (user: any | null) => void;
-  setVerificationStatus: (verificationStatus: string | null) => void;
+  setVerificationStatus: (kycStatus: string | null) => void;
+  setBootstrapped: (value: boolean) => void;
+  resetAuth: () => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   status: 'anonymous',
+  isBootstrapped: false,
 
   setUser: (user) => {
     if (!user) {
@@ -25,8 +30,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  setVerificationStatus: (verificationStatus) => {
-    if (verificationStatus === 'verified') {
+  // 🔥 ESTA ES LA CLAVE
+  setVerificationStatus: (kycStatus) => {
+    if (kycStatus === 'verified') {
       set((state) => ({
         ...state,
         status: 'verified',
@@ -34,8 +40,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     } else {
       set((state) => ({
         ...state,
-        status: 'authenticated',
+        status: state.user ? 'authenticated' : 'anonymous',
       }));
     }
   },
+
+  setBootstrapped: (value) => set({ isBootstrapped: value }),
+
+  resetAuth: () =>
+    set({
+      user: null,
+      status: 'anonymous',
+      isBootstrapped: true,
+    }),
 }));

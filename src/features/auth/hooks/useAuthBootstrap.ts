@@ -3,47 +3,59 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useEffect } from 'react';
 
 export const useAuthBootstrap = () => {
-  const { setUser, setVerificationStatus } = useAuthStore();
+  const setUser = useAuthStore((s) => s.setUser);
+  const setVerificationStatus = useAuthStore((s) => s.setVerificationStatus);
+  const setBootstrapped = useAuthStore((s) => s.setBootstrapped);
 
   useEffect(() => {
     const init = async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      if (!session?.user) {
-        setUser(null);
-        return;
+      if (user) {
+        setUser(user);
+
+        // 🔥 traer profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('kyc_status')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.kyc_status) {
+          setVerificationStatus(profile.kyc_status);
+        }
       }
 
-      setUser(session.user);
-
-      // 🔥 traer profile (clave Truora)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('verification_status')
-        .eq('id', session.user.id)
-        .single();
-
-      setVerificationStatus(profile?.verification_status ?? null);
+      setBootstrapped(true);
     };
 
     init();
 
-    // listener de cambios de sesión
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        setUser(null);
-        return;
-      }
+    // 🔥 escuchar cambios de sesión
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          setUser(session.user);
 
-      setUser(session.user);
-    });
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('kyc_status')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.kyc_status) {
+            setVerificationStatus(profile.kyc_status);
+          }
+        } else {
+          setUser(null);
+        }
+      }
+    );
 
     return () => {
-      subscription.unsubscribe();
+      listener.subscription.unsubscribe();
     };
   }, []);
 };

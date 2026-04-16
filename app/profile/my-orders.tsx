@@ -1,16 +1,16 @@
-import { useMyOrders } from '@/features/orders/hooks/useMyOrders';
 import { router } from 'expo-router';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { useOrders } from '../../src/features/orders/hooks/useOrders';
 
 export default function MyOrdersScreen() {
-  const { orders, loading } = useMyOrders();
+  const { orders, loading } = useOrders();
 
   if (loading) {
     return (

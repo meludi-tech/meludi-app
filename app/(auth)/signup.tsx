@@ -9,14 +9,14 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIMARY = '#1F3A44';
 
 export default function SignupScreen() {
-  const setSession = useAuthStore((s) => s.setSession);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,26 +30,41 @@ export default function SignupScreen() {
 
     try {
       setLoading(true);
-      const session = await signUp(email.trim(), password);
 
-      if (session) {
-        setSession(session);
+      // 🔥 signUp ahora crea auth + profile
+      const data = await signUp(email.trim(), password);
+
+      if (!data?.user) {
+        throw new Error('No se pudo crear el usuario');
       }
 
+      // 🔥 guardar en store
+      setUser(data.user);
+
+      // 🔥 esperar un pequeño delay para asegurar consistencia
+      await new Promise((res) => setTimeout(res, 500));
+
+      // 🔥 ir a KYC
       router.replace('/(auth)/pre-truora');
+
     } catch (error: any) {
-      Alert.alert('No pudimos crear tu cuenta', error?.message || 'Intenta de nuevo.');
+      console.log('SIGNUP ERROR:', error);
+
+      Alert.alert(
+        'No pudimos crear tu cuenta',
+        error?.message || 'Intenta de nuevo.'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogle = () => {
-    Alert.alert('Pendiente', 'Google OAuth lo conectamos en el siguiente paso.');
+    Alert.alert('Pendiente', 'Google lo conectamos después.');
   };
 
   const handleApple = () => {
-    Alert.alert('Pendiente', 'Apple Sign In lo conectamos en el siguiente paso.');
+    Alert.alert('Pendiente', 'Apple lo conectamos después.');
   };
 
   return (
@@ -59,14 +74,24 @@ export default function SignupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 18, paddingBottom: 32 }}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingTop: 18,
+            paddingBottom: 32,
+          }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Pressable onPress={() => router.back()} hitSlop={12} style={{ marginBottom: 18 }}>
+          {/* BACK */}
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            style={{ marginBottom: 18 }}
+          >
             <Text style={{ fontSize: 22, color: '#111827' }}>←</Text>
           </Pressable>
 
+          {/* TITLE */}
           <Text
             style={{
               fontSize: 32,
@@ -79,6 +104,7 @@ export default function SignupScreen() {
             Crear cuenta
           </Text>
 
+          {/* EMAIL */}
           <TextInput
             value={email}
             onChangeText={setEmail}
@@ -98,6 +124,7 @@ export default function SignupScreen() {
             }}
           />
 
+          {/* PASSWORD */}
           <TextInput
             value={password}
             onChangeText={setPassword}
@@ -116,6 +143,7 @@ export default function SignupScreen() {
             }}
           />
 
+          {/* CTA */}
           <Pressable
             onPress={handleSignup}
             disabled={loading}
@@ -129,11 +157,18 @@ export default function SignupScreen() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '600' }}>
+            <Text
+              style={{
+                color: '#FFFFFF',
+                fontSize: 17,
+                fontWeight: '600',
+              }}
+            >
               {loading ? 'Creando cuenta...' : 'Crear cuenta'}
             </Text>
           </Pressable>
 
+          {/* GOOGLE */}
           <Pressable
             onPress={handleGoogle}
             style={{
@@ -146,11 +181,12 @@ export default function SignupScreen() {
               marginBottom: 12,
             }}
           >
-            <Text style={{ color: '#111827', fontSize: 17, fontWeight: '500' }}>
+            <Text style={{ color: '#111827', fontSize: 17 }}>
               Registrarse con Google
             </Text>
           </Pressable>
 
+          {/* APPLE */}
           <Pressable
             onPress={handleApple}
             style={{
@@ -163,11 +199,12 @@ export default function SignupScreen() {
               marginBottom: 28,
             }}
           >
-            <Text style={{ color: '#111827', fontSize: 17, fontWeight: '500' }}>
+            <Text style={{ color: '#111827', fontSize: 17 }}>
               Registrarse con Apple
             </Text>
           </Pressable>
 
+          {/* LOGIN */}
           <Pressable onPress={() => router.push('/(auth)/login')}>
             <Text
               style={{
